@@ -25,7 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTool('convert', '/api/convert', 'Converting...', handleFileResult);
     setupTool('compress', '/api/compress', 'Compressing...', handleFileResult, getCompressExtra);
     setupTool('ocr', '/api/ocr', 'Extracting text...', handleOcrResult, getOcrExtra);
+    setupTool('split', '/api/split', 'Splitting...', handleFileResult, getSplitExtra);
     setupTool('unlock', '/api/unlock', 'Unlocking...', handleFileResult, getUnlockExtra);
+    setupMergeTool();
+    setupSplitToggle();
 
     function setupTool(id, endpoint, progressMsg, resultHandler, extraDataFn) {
         const dropZone = document.getElementById(`${id}-drop`);
@@ -150,9 +153,165 @@ document.addEventListener('DOMContentLoaded', () => {
         return { language: lang ? lang.value : 'eng' };
     }
 
+    function getSplitExtra() {
+        const mode = document.querySelector('input[name="split-mode"]:checked');
+        const pages = document.getElementById('split-pages');
+        return {
+            mode: mode ? mode.value : 'all',
+            pages: pages ? pages.value : ''
+        };
+    }
+
     function getUnlockExtra() {
         const pw = document.getElementById('unlock-password');
         return { password: pw ? pw.value : '' };
+    }
+
+    // --- Split mode toggle ---
+    function setupSplitToggle() {
+        const radios = document.querySelectorAll('input[name="split-mode"]');
+        const pagesInput = document.getElementById('split-pages');
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'range') {
+                    pagesInput.classList.remove('hidden');
+                } else {
+                    pagesInput.classList.add('hidden');
+                }
+            });
+        });
+    }
+
+    // --- Merge Tool (multi-file) ---
+    function setupMergeTool() {
+        const dropZone = document.getElementById('merge-drop');
+        const fileInput = document.getElementById('merge-input');
+        const fileList = document.getElementById('merge-file-list');
+        const btn = document.getElementById('merge-btn');
+        const progress = document.getElementById('merge-progress');
+        const result = document.getElementById('merge-result');
+
+        let mergeFiles = [];
+
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+        });
+
+        dropZone.addEventListener('drop', e => {
+            const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            if (files.length) addFiles(files);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length) {
+                addFiles(Array.from(e.target.files));
+                fileInput.value = '';
+            }
+        });
+
+        function addFiles(files) {
+            mergeFiles.push(...files);
+            renderFileList();
+        }
+
+        function renderFileList() {
+            if (mergeFiles.length === 0) {
+                fileList.classList.add('hidden');
+                btn.classList.add('hidden');
+                dropZone.style.display = '';
+                return;
+            }
+
+            dropZone.style.display = 'none';
+            fileList.classList.remove('hidden');
+            btn.classList.remove('hidden');
+            if (mergeFiles.length < 2) btn.classList.add('hidden');
+            else btn.classList.remove('hidden');
+
+            let html = '';
+            mergeFiles.forEach((f, i) => {
+                html += `<div class="file-list-item">
+                    <div class="file-details">
+                        <span class="file-order">${i + 1}</span>
+                        <span class="file-name">${escapeHtml(f.name)}</span>
+                        <span class="file-size">${formatSize(f.size)}</span>
+                    </div>
+                    <button class="btn-remove" data-index="${i}" title="Remove">&times;</button>
+                </div>`;
+            });
+            html += `<div class="file-list-actions">
+                <button class="btn-add-more" id="merge-add-more">+ Add more files</button>
+                <button class="btn-clear-all" id="merge-clear">Clear all</button>
+            </div>`;
+            fileList.innerHTML = html;
+
+            result.classList.add('hidden');
+            result.innerHTML = '';
+
+            // Remove individual file
+            fileList.querySelectorAll('.btn-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    mergeFiles.splice(parseInt(btn.dataset.index), 1);
+                    renderFileList();
+                });
+            });
+
+            document.getElementById('merge-add-more').addEventListener('click', () => fileInput.click());
+            document.getElementById('merge-clear').addEventListener('click', () => {
+                mergeFiles = [];
+                renderFileList();
+            });
+        }
+
+        btn.addEventListener('click', async () => {
+            if (mergeFiles.length < 2) return;
+
+            btn.classList.add('hidden');
+            progress.classList.remove('hidden');
+            result.classList.add('hidden');
+            result.innerHTML = '';
+
+            const formData = new FormData();
+            mergeFiles.forEach(f => formData.append('files', f));
+
+            try {
+                const response = await fetch('/api/merge', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                progress.classList.add('hidden');
+
+                if (!response.ok) {
+                    let errMsg = 'Merge failed';
+                    try {
+                        const err = await response.json();
+                        errMsg = err.error || errMsg;
+                    } catch (_) {}
+                    showError(result, errMsg);
+                    btn.classList.remove('hidden');
+                    return;
+                }
+
+                handleFileResult(result, response, null);
+            } catch (err) {
+                progress.classList.add('hidden');
+                showError(result, 'Connection error. Please try again.');
+                btn.classList.remove('hidden');
+            }
+        });
     }
 
     // --- Result handlers ---

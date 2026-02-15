@@ -218,6 +218,93 @@ def unlock_pdf():
         return jsonify({'error': f'Unlock failed: {str(e)}'}), 500
 
 
+@app.route('/api/merge', methods=['POST'])
+def merge_pdf():
+    files = request.files.getlist('files')
+    if not files or len(files) < 2:
+        return jsonify({'error': 'Please upload at least 2 PDF files.'}), 400
+
+    input_paths = []
+    output_name = unique_filename('merged', '.pdf')
+    output_path = os.path.join(OUTPUT_FOLDER, output_name)
+
+    try:
+        for file in files:
+            if file.filename == '' or not allowed_file(file.filename):
+                return jsonify({'error': f'Invalid file: {file.filename}'}), 400
+            path = os.path.join(UPLOAD_FOLDER, unique_filename(file.filename))
+            file.save(path)
+            input_paths.append(path)
+
+        from services.pdf_merge import merge
+        merge(input_paths, output_path)
+
+        @after_this_request
+        def cleanup(response):
+            for p in input_paths + [output_path]:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+            return response
+
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name='merged.pdf'
+        )
+    except Exception as e:
+        for p in input_paths + [output_path]:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        return jsonify({'error': f'Merge failed: {str(e)}'}), 500
+
+
+@app.route('/api/split', methods=['POST'])
+def split_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '' or not allowed_file(file.filename):
+        return jsonify({'error': 'Invalid file. Please upload a PDF.'}), 400
+
+    mode = request.form.get('mode', 'all')
+    pages_str = request.form.get('pages', '')
+
+    input_path = os.path.join(UPLOAD_FOLDER, unique_filename(file.filename))
+
+    try:
+        file.save(input_path)
+
+        from services.pdf_split import split
+        result = split(input_path, OUTPUT_FOLDER, mode, pages_str)
+        zip_path = result['zip_path']
+
+        @after_this_request
+        def cleanup(response):
+            for p in [input_path, zip_path]:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+            return response
+
+        return send_file(
+            zip_path,
+            as_attachment=True,
+            download_name='split_pages.zip'
+        )
+    except Exception as e:
+        try:
+            os.remove(input_path)
+        except OSError:
+            pass
+        return jsonify({'error': f'Split failed: {str(e)}'}), 500
+
+
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({'error': 'File is too large. Maximum size is 50 MB.'}), 413

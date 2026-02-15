@@ -50,6 +50,22 @@
                 </svg>
                 OCR PDF
             </button>
+            <button class="tab" data-target="merge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 3v4"/>
+                    <path d="M8 3v4"/>
+                </svg>
+                Merge PDF
+            </button>
+            <button class="tab" data-target="split">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="16" y1="3" x2="16" y2="21"/>
+                    <line x1="8" y1="3" x2="8" y2="21"/>
+                    <rect x="2" y="3" width="20" height="18" rx="2" ry="2"/>
+                </svg>
+                Split PDF
+            </button>
             <button class="tab" data-target="unlock">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -195,6 +211,77 @@
                 <span class="progress-text">Extracting text...</span>
             </div>
             <div class="result hidden" id="ocr-result"></div>
+        </section>
+
+        <!-- Merge PDF Panel -->
+        <section id="merge" class="panel hidden">
+            <div class="drop-zone" id="merge-drop">
+                <input type="file" accept=".pdf" hidden id="merge-input" multiple>
+                <div class="drop-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <p class="drop-text">Drag & drop multiple PDFs here</p>
+                <p class="drop-hint">or <span class="browse-link">browse files</span></p>
+                <p class="drop-limit">Select 2 or more PDF files (max 50 MB total)</p>
+            </div>
+            <div class="file-list hidden" id="merge-file-list"></div>
+            <button class="btn-primary hidden" id="merge-btn">Merge PDFs</button>
+            <div class="progress hidden" id="merge-progress">
+                <div class="progress-bar"></div>
+                <span class="progress-text">Merging...</span>
+            </div>
+            <div class="result hidden" id="merge-result"></div>
+        </section>
+
+        <!-- Split PDF Panel -->
+        <section id="split" class="panel hidden">
+            <div class="drop-zone" id="split-drop">
+                <input type="file" accept=".pdf" hidden id="split-input">
+                <div class="drop-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <p class="drop-text">Drag & drop your PDF here</p>
+                <p class="drop-hint">or <span class="browse-link">browse files</span></p>
+                <p class="drop-limit">Maximum file size: 50 MB</p>
+            </div>
+            <div class="file-info hidden" id="split-file-info">
+                <div class="file-details">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span class="file-name"></span>
+                    <span class="file-size"></span>
+                </div>
+                <button class="btn-remove" title="Remove file">&times;</button>
+            </div>
+            <div class="options hidden" id="split-options">
+                <label class="option-label">Split Mode</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="split-mode" value="all" checked>
+                        <span class="radio-custom"></span>
+                        <span class="radio-text">All pages <small>(1 PDF per page)</small></span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="split-mode" value="range">
+                        <span class="radio-custom"></span>
+                        <span class="radio-text">Page range <small>(e.g. 1-3, 5)</small></span>
+                    </label>
+                </div>
+                <input type="text" class="text-input hidden" id="split-pages" placeholder="e.g. 1-3, 5, 8-10" style="margin-top: 12px;">
+            </div>
+            <button class="btn-primary hidden" id="split-btn">Split PDF</button>
+            <div class="progress hidden" id="split-progress">
+                <div class="progress-bar"></div>
+                <span class="progress-text">Splitting...</span>
+            </div>
+            <div class="result hidden" id="split-result"></div>
         </section>
 
         <!-- Unlock PDF Panel -->
