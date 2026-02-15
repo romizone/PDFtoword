@@ -14,6 +14,8 @@ A lightweight, local web application for working with PDF files. All processing 
 | **Compress PDF** | Reduce PDF file size with 3 compression levels (Low / Medium / High) |
 | **OCR PDF** | Extract text from scanned/image-based PDFs with 20+ language support |
 | **Unlock PDF** | Remove password protection and restrictions from PDF files |
+| **Merge PDF** | Combine multiple PDF files into a single document |
+| **Split PDF** | Extract pages (all or by range) into separate PDFs |
 
 ## Screenshots
 
@@ -103,7 +105,9 @@ PDFtoword/
 │   ├── pdf_to_word.py      # PDF to Word conversion
 │   ├── pdf_compress.py     # PDF compression
 │   ├── pdf_ocr.py          # OCR text extraction
-│   └── pdf_unlock.py       # PDF unlock/decrypt
+│   ├── pdf_unlock.py       # PDF unlock/decrypt
+│   ├── pdf_merge.py        # PDF merge
+│   └── pdf_split.py        # PDF split
 ├── templates/
 │   └── index.html          # Web UI
 ├── static/
@@ -122,6 +126,12 @@ PDFtoword/
 | `POST` | `/api/compress` | Compress PDF (returns compressed `.pdf`) |
 | `POST` | `/api/ocr` | OCR extraction (returns JSON with text) |
 | `POST` | `/api/unlock` | Unlock PDF (returns unlocked `.pdf`) |
+| `POST` | `/api/merge` | Merge multiple PDFs (returns merged `.pdf`) |
+| `POST` | `/api/split` | Split PDF pages (returns `.zip`) |
+
+## Paper
+
+For a detailed technical overview, architecture, and implementation details, see [PAPER.md](PAPER.md).
 
 ## License
 
