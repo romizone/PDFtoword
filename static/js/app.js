@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Setup each tool ---
     setupTool('convert', '/api/convert', 'Converting...', handleFileResult);
     setupTool('compress', '/api/compress', 'Compressing...', handleFileResult, getCompressExtra);
-    setupTool('ocr', '/api/ocr', 'Extracting text...', handleOcrResult);
+    setupTool('ocr', '/api/ocr', 'Extracting text...', handleOcrResult, getOcrExtra);
+    setupTool('unlock', '/api/unlock', 'Unlocking...', handleFileResult, getUnlockExtra);
 
     function setupTool(id, endpoint, progressMsg, resultHandler, extraDataFn) {
         const dropZone = document.getElementById(`${id}-drop`);
@@ -142,6 +143,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function getCompressExtra() {
         const checked = document.querySelector('input[name="quality"]:checked');
         return { quality: checked ? checked.value : 'medium' };
+    }
+
+    function getOcrExtra() {
+        const lang = document.getElementById('ocr-language');
+        return { language: lang ? lang.value : 'eng' };
+    }
+
+    function getUnlockExtra() {
+        const pw = document.getElementById('unlock-password');
+        return { password: pw ? pw.value : '' };
     }
 
     // --- Result handlers ---

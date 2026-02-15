@@ -167,6 +167,57 @@ def ocr_pdf():
             pass
 
 
+@app.route('/api/unlock', methods=['POST'])
+def unlock_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '' or not allowed_file(file.filename):
+        return jsonify({'error': 'Invalid file. Please upload a PDF.'}), 400
+
+    password = request.form.get('password', '')
+
+    input_path = os.path.join(UPLOAD_FOLDER, unique_filename(file.filename))
+    output_name = unique_filename(file.filename, '.pdf')
+    output_path = os.path.join(OUTPUT_FOLDER, output_name)
+
+    try:
+        file.save(input_path)
+
+        from services.pdf_unlock import unlock
+        unlock(input_path, output_path, password)
+
+        @after_this_request
+        def cleanup(response):
+            for p in [input_path, output_path]:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+            return response
+
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name='unlocked_' + file.filename
+        )
+    except ValueError as e:
+        for p in [input_path, output_path]:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        for p in [input_path, output_path]:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        return jsonify({'error': f'Unlock failed: {str(e)}'}), 500
+
+
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({'error': 'File is too large. Maximum size is 50 MB.'}), 413
